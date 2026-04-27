@@ -1,3 +1,4 @@
+import os
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, AsyncMock, MagicMock
@@ -13,7 +14,7 @@ def test_health():
 
 
 def test_convert_success():
-    with patch('app.main.EXCHANGE_RATE_API_KEY', 'dummy_key'):
+    with patch.dict(os.environ, {'EXCHANGE_RATE_API_KEY': 'dummy_key'}):
         # Mocking the async context manager and the get method
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -42,7 +43,7 @@ def test_convert_success():
 
 
 def test_convert_missing_api_key():
-    with patch('app.main.EXCHANGE_RATE_API_KEY', ''):
+    with patch.dict(os.environ, {'EXCHANGE_RATE_API_KEY': ''}):
         response = client.get(
             "/convert?amount=1000&base_currency=USD&target_currency=VND")
         assert response.status_code == 500
