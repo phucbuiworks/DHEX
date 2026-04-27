@@ -1,73 +1,83 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const amountInput = document.getElementById('input-amount');
-    const outputAmount = document.getElementById('output-amount');
-    const baseCurrency = document.getElementById('base-currency');
-    const targetCurrency = document.getElementById('target-currency');
-    const swapBtn = document.getElementById('swap-btn');
-    const rateDisplay = document.getElementById('rate-display');
-    const errorMessage = document.getElementById('error-message');
 
-    let debounceTimer;
+    function setupWidget(prefix) {
+        const amountInput = document.getElementById(`${prefix}-input-amount`);
+        const outputAmount = document.getElementById(`${prefix}-output-amount`);
+        const baseCurrency = document.getElementById(`${prefix}-base-currency`);
+        const targetCurrency = document.getElementById(`${prefix}-target-currency`);
+        const swapBtn = document.getElementById(`${prefix}-swap-btn`);
+        const rateDisplay = document.getElementById(`${prefix}-rate-display`);
+        const errorMessage = document.getElementById(`${prefix}-error-message`);
 
-    const fetchConversion = async () => {
-        const amount = parseFloat(amountInput.value);
-        const base = baseCurrency.value;
-        const target = targetCurrency.value;
+        // Safely check if elements exist (so standard DOM errors don't crash the script)
+        if (!amountInput) return;
 
-        if (isNaN(amount) || amount <= 0) {
-            outputAmount.value = '';
-            rateDisplay.textContent = '';
-            errorMessage.classList.add('hidden');
-            return;
-        }
+        let debounceTimer;
 
-        if (base === target) {
-            outputAmount.value = amount.toFixed(2);
-            rateDisplay.textContent = `1 ${base} = 1 ${target}`;
-            errorMessage.classList.add('hidden');
-            return;
-        }
+        const fetchConversion = async () => {
+            const amount = parseFloat(amountInput.value);
+            const base = baseCurrency.value;
+            const target = targetCurrency.value;
 
-        try {
-            outputAmount.placeholder = 'Converting...';
-            errorMessage.classList.add('hidden');
-            
-            const response = await fetch(`/convert?amount=${amount}&base_currency=${base}&target_currency=${target}`);
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.detail || 'Conversion failed');
+            if (isNaN(amount) || amount <= 0) {
+                outputAmount.value = '';
+                rateDisplay.textContent = '';
+                errorMessage.classList.add('hidden');
+                return;
             }
 
-            outputAmount.value = data.converted_amount.toFixed(2);
-            rateDisplay.textContent = `1 ${base} = ${data.conversion_rate} ${target}`;
-            outputAmount.placeholder = '0.00';
+            if (base === target) {
+                outputAmount.value = amount.toFixed(4);
+                rateDisplay.textContent = `1 ${base} = 1 ${target}`;
+                errorMessage.classList.add('hidden');
+                return;
+            }
 
-        } catch (error) {
-            console.error('Error fetching conversion:', error);
-            errorMessage.textContent = error.message;
-            errorMessage.classList.remove('hidden');
-            outputAmount.value = '';
-            rateDisplay.textContent = '';
-        }
-    };
+            try {
+                outputAmount.placeholder = 'Converting...';
+                errorMessage.classList.add('hidden');
 
-    const triggerUpdate = () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(fetchConversion, 300);
-    };
+                const response = await fetch(`/convert?amount=${amount}&base_currency=${base}&target_currency=${target}`);
+                const data = await response.json();
 
-    amountInput.addEventListener('input', triggerUpdate);
-    baseCurrency.addEventListener('change', triggerUpdate);
-    targetCurrency.addEventListener('change', triggerUpdate);
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Conversion failed');
+                }
 
-    swapBtn.addEventListener('click', () => {
-        const temp = baseCurrency.value;
-        baseCurrency.value = targetCurrency.value;
-        targetCurrency.value = temp;
+                outputAmount.value = data.converted_amount.toFixed(4);
+                rateDisplay.textContent = `1 ${base} = ${data.conversion_rate} ${target}`;
+                outputAmount.placeholder = '0.00';
+
+            } catch (error) {
+                console.error(`Error fetching conversion for ${prefix}:`, error);
+                errorMessage.textContent = error.message;
+                errorMessage.classList.remove('hidden');
+                outputAmount.value = '';
+                rateDisplay.textContent = '';
+            }
+        };
+
+        const triggerUpdate = () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchConversion, 300);
+        };
+
+        amountInput.addEventListener('input', triggerUpdate);
+        baseCurrency.addEventListener('change', triggerUpdate);
+        targetCurrency.addEventListener('change', triggerUpdate);
+
+        swapBtn.addEventListener('click', () => {
+            const temp = baseCurrency.value;
+            baseCurrency.value = targetCurrency.value;
+            targetCurrency.value = temp;
+            triggerUpdate();
+        });
+
+        // Initial fetch
         triggerUpdate();
-    });
+    }
 
-    // Initial fetch
-    triggerUpdate();
+    // Initialize both independent widgets
+    setupWidget('fiat');
+    setupWidget('crypto');
 });
