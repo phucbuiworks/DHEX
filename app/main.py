@@ -36,8 +36,8 @@ def health():
 @app.get("/convert")
 async def convert(
     amount: float = Query(..., gt=0),
-    base_currency: str = Query(..., min_length=3, max_length=3),
-    target_currency: str = Query(..., min_length=3, max_length=3),
+    base_currency: str = Query(..., min_length=3, max_length=5),
+    target_currency: str = Query(..., min_length=3, max_length=5),
 ):
     api_key = os.environ.get("EXCHANGE_RATE_API_KEY", "").strip(' "\'')
     if not api_key:
