@@ -30,7 +30,18 @@ async def root():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    # Intentionally breaking this to fail the Pytest CI runner
+    return {"status": "broken"}
+
+
+@app.get("/metals")
+def get_metals_prices():
+    # Placeholder for platinum, gold, silver prices
+    return {
+        "gold": 2500.0,
+        "silver": 30.0,
+        "platinum": 1000.0
+    }
 
 
 @app.get("/convert")
